@@ -16,13 +16,6 @@ with open('auth.txt', 'r') as file:
 		user, token = line.split(':')
 		users.append(user.replace('\n', ''))
 		tokens.append(token.replace('\n', ''))
-
-#	user, token = file.read().split(':')
-#	users.append(user)
-#	tokens.append(token)
-
-print(users)
-print(tokens)
 		
 repositories = []
 
@@ -42,49 +35,18 @@ def init():
 
 class Crawler:
 	def __init__(self, repository, max_concurrency=50):
-		self.page = 'https://api.github.com/repos/{}/pulls?state=closed&page=1&per_page=100'.format(repository)
+		self.key = 0
+		self.user = users[self.key]
+		self.token = tokens[self.key]
+		self.page = 'https://api.github.com/repos/{}/pulls?state=closed&page=1&per_page=100&client_id={}&client_secret={}'.format(repository, self.user, self.token)
 		self.repository = repository
-		#self.session = aiohttp.ClientSession(auth=aiohttp.BasicAuth(user, token))
 		self.bounded_sempahore = asyncio.BoundedSemaphore(max_concurrency)
 		self.accepted_prs = []
 		self.rejected_prs = []
 		self.sleep_delay = 3
-		self.key = 0
-		self.user = users[self.key]
-		self.token = tokens[self.key]
+		
 		# UTC-3 + 5 minutes
 		self.auth_lock_timer = datetime.datetime.utcnow() - datetime.timedelta(hours=3) + datetime.timedelta(minutes=5)
-
-	async def _http_request_old(self, url):
-		print('Fetching: {}'.format(url))
-
-		async with self.bounded_sempahore:
-			try:
-				async with aiohttp.ClientSession(auth=aiohttp.BasicAuth(self.user, self.token)) as client:
-					async with client.get(url, timeout=30) as response:
-						resp =  await response.json()
-
-						if("200" in response.headers["status"]):
-							await asyncio.sleep(3)
-							return resp
-						# If Rate Limit has exceeded, wait for the reset cooldown and try again.
-						elif("403" in response.headers["status"] and 'API rate limit exceeded' in resp["message"]):
-							print("exceeded")
-							reset_time = float(response.headers['X-RateLimit-Reset'])
-
-							reset_time_format = datetime.datetime.fromtimestamp(reset_time)
-							print("Reset Time: {}".format(reset_time_format))
-							current_time = datetime.datetime.now()
-							print("Curr Time: {}".format(current_time))
-
-							# Sleep for reset time + 1 second.
-							delta_time = (reset_time_format - current_time).total_seconds() + 1
-							print("Rate Limit exceeded. Sleeping for {} seconds.".format(delta_time))
-							await asyncio.sleep(delta_time)
-							print("woke")
-							return await self._http_request(url)
-			except Exception as e:
-				print('HTTP Exception: {}'.format(e))
 
 	def roll_auth(self):
 		curr_time = datetime.datetime.utcnow() - datetime.timedelta(hours=3)
@@ -109,50 +71,52 @@ class Crawler:
 
 		async with self.bounded_sempahore:
 			try:
-				async with aiohttp.ClientSession(auth=aiohttp.BasicAuth(self.user, self.token)) as client:
+				async with aiohttp.ClientSession() as client:
 					async with client.get(url, timeout=30) as response:
 						resp =  await response.json()
-						
 						if("200" in response.headers["status"]):
 							if(int(response.headers["X-RateLimit-Remaining"]) <= 100):
 								self.roll_auth()
 
 							await asyncio.sleep(3)
 							return resp
+							
 						# If Rate Limit has exceeded, wait for the reset cooldown and try again.
-						elif("403" in response.headers["status"] and 'API rate limit exceeded' in resp["message"]):
-							print("Exceeded for: {}".format(url))
+						if("403" in response.headers["status"] and 'API rate limit exceeded' in resp["message"]):
+							print("Exceeded for {}. URL: {}".format(self.user, url))
 							reset_time = float(response.headers['X-RateLimit-Reset'])
 
 							reset_time_format = datetime.datetime.fromtimestamp(reset_time)
 							print("Reset Time: {}".format(reset_time_format))
 							current_time = datetime.datetime.now()
 							print("Curr Time: {}".format(current_time))
+							
+							#Change credentials and update to new url
+							url = url.split('?client_id')[0]
+							url += '?client_id={}&client_secret={}'.format(self.user, self.token)
+							self.roll_auth()
 
-							# Sleep for reset time + 1 second.
-							delta_time = (reset_time_format - current_time).total_seconds() + 1
-							print("Rate Limit exceeded. Sleeping for {} seconds.".format(delta_time))
-							await asyncio.sleep(delta_time)
-							print("woke")
+							print("NEW URL: {}".format(url))
 							return await self._http_request(url)
+									
 			except Exception as e:
 				print('HTTP Exception: {}'.format(e))
 
 	async def verify_presence_of_review_comments(self, pr):
-		print('Verifying presence of review comments of #{}.'.format(pr))
+		#print('Verifying presence of review comments of #{}.'.format(pr))
 
-		response = await self._http_request('https://api.github.com/repos/{}/pulls/{}/comments'.format(self.repository, pr))
+		response = await self._http_request('https://api.github.com/repos/{}/pulls/{}/comments?client_id={}&client_secret={}'.format(self.repository, pr, self.user, self.token))
 		
-		print("PR: {}\nLEN: {}\nRESP: {}".format(pr, len(response), response))
+		#print("PR: {}\nLEN: {}\nRESP: {}".format(pr, len(response), response))
 		if(len(response) == 0):
 			return False
 		else:
 			return True
 	
 	async def verify_acceptance(self, pr):
-		print('Verifying acceptance of pull request #{}'.format(pr))
+		#print('Verifying acceptance of pull request #{}'.format(pr))
 
-		response = await self._http_request('https://api.github.com/repos/{}/pulls/{}'.format(self.repository, pr))
+		response = await self._http_request('https://api.github.com/repos/{}/pulls/{}?client_id={}&client_secret={}'.format(self.repository, pr, self.user, self.token))
 
 		if(response["merged_at"] != None):
 				return True
@@ -160,9 +124,9 @@ class Crawler:
 				return False
 
 	async def filter_by_presence_of_changed_files(self, pr):
-		print('Verifying presence of changed files in pull request: {}'.format(pr))
+		#print('Verifying presence of changed files in pull request: {}'.format(pr))
 
-		response = await self._http_request('https://api.github.com/repos/{}/pulls/{}'.format(self.repository, pr))
+		response = await self._http_request('https://api.github.com/repos/{}/pulls/{}?client_id={}&client_secret={}'.format(self.repository, pr, self.user, self.token))
 
 		if response["changed_files"] > 0:
 			return True
@@ -220,21 +184,25 @@ class Crawler:
 
 
 	async def crawl_async(self):
-		while True:
+
+		async with aiohttp.ClientSession() as client:
+			async with client.get(self.page, timeout=30) as response:
+				last_page_number = int(str(response.links['last']['url']).split("page=")[1].replace('&per_', '')) + 1
+		
+		
+		for i in range(1, last_page_number):
 			async with self.bounded_sempahore:
 				try:
-					await self.extract_multi_async()
+					self.page = 'https://api.github.com/repos/{}/pulls?state=closed&page={}&per_page=100&client_id={}&client_secret={}'.format(self.repository, i, self.user, self.token)
 
-					async with aiohttp.ClientSession(auth=aiohttp.BasicAuth(self.user, self.token)) as client:
-						async with client.get(self.page, timeout=30) as response:
-							print("LINK: ".format(response.links['next']))
-							self.page = response.links['next']['url']
+					await self.extract_multi_async()
 						
 				except Exception as e:
-					print('While True Exception: {}'.format(e))
-
+					print('Crawl for Exception: {}'.format(e))
+					
 		print('LEN: {} Accepted PRs: {}'.format(len(self.accepted_prs), self.accepted_prs))
 		print('LEN: {} Rejected PRs: {}'.format(len(self.rejected_prs), self.rejected_prs))
+	
 	async def crawl_async_old(self):
 
 		await self.loop()
