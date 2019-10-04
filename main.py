@@ -327,9 +327,8 @@ class Crawler:
 				requested_reviewers.append(reviewer_object)
 
 			pull_request = {
-				'_id' : response['number'],
+				'number' : response['number'],
 				'title' : response['title'],
-				'url' : response['url'],
 				'state' : response['state'],
 				'user' : {
 					'login' : response['user']['login'],
@@ -467,10 +466,10 @@ class Crawler:
 				try:
 					pull_request = await future
 					pull_requests.append(pull_request)
-					inserted_prs.append(pull_request['_id'])
+					inserted_prs.append(pull_request['number'])
 					print('inserting to db')
 					pull_requests_collection.insert_one(pull_request)
-					repositories_collection.update_one({'_id' : self.repository}, { '$push' : {'closed_pull_requests' : pull_request['_id']} })
+					repositories_collection.update_one({'number' : self.repository}, { '$push' : {'closed_pull_requests' : pull_request['number']} })
 
 				except Exception as e:
 					print('Extract Multi Exception: {}'.format(e))
