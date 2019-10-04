@@ -435,10 +435,9 @@ class Crawler:
 
 		for pr in closed_pull_requests:
 			pr = int(pr)
+			
 			# Inserts
 			if(pr not in document_closed_pull_requests):
-				#repositories_collection.update_one({'_id' : self.repository}, { '$push' : {'closed_pull_requests' : pr} })
-
 				futures.append(self.extract_pull_request(str(pr)))
 
 				if(pr in document_open_pull_requests):
@@ -469,7 +468,7 @@ class Crawler:
 					inserted_prs.append(pull_request['number'])
 					print('inserting to db')
 					pull_requests_collection.insert_one(pull_request)
-					repositories_collection.update_one({'number' : self.repository}, { '$push' : {'closed_pull_requests' : pull_request['number']} })
+					repositories_collection.update_one({'_id' : self.repository}, { '$push' : {'closed_pull_requests' : pull_request['number']} })
 
 				except Exception as e:
 					print('Extract Multi Exception: {}'.format(e))
@@ -493,9 +492,7 @@ if __name__ == '__main__':
 	elif args.update:
 		try:
 			crawler = Crawler(args.update)
-			#future = asyncio.Task(crawler.crawl_async())
 			loop = asyncio.get_event_loop()
-			#loop.run_until_complete(crawler.crawl_async())
 			loop.run_until_complete(crawler.update_repository())
 		except: 
 			pass
@@ -506,16 +503,3 @@ if __name__ == '__main__':
 	formatted_elapsed_time = time.strftime("%H:%M:%S", time.gmtime(elapsed_time))
 
 	print(formatted_elapsed_time)
-
-
-"""	try:
-		crawler = Crawler('vuejs/vue')
-		#future = asyncio.Task(crawler.crawl_async())
-		loop = asyncio.get_event_loop()
-		#loop.run_until_complete(crawler.crawl_async())
-		loop.run_until_complete(crawler.crawl_first_page())
-	except: 
-		pass
-	finally:
-		loop.close()
-"""
