@@ -1,1 +1,5 @@
-*.txt
+auth.txt
+env/
+Articles/
+tcl/
+test.py

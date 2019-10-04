@@ -1,0 +1,6 @@
+pymongo
+sklearn
+nltk
+xlrd
+imblearn
+aiohttp
