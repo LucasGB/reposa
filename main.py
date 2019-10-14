@@ -1,7 +1,9 @@
 #!/usr/local/bin/python3.5
 import argparse
 import os
-from SentiCR.SentiCR import  SentiCR
+#from SentiCR.SentiCR import SentiCR
+from SentiSW.code.classification.classifier import Classifier
+from SentiSW.code.entity.training_set_generation import get_entity
 import pickle
 import asyncio
 import aiohttp
@@ -51,6 +53,18 @@ def init():
 												'open_pull_requests' : [],
 												'closed_pull_requests' : []
 											})
+
+def get_tuple(text):
+    #sentiment_analyzer = Classifier(read=False, vector_method='tfidf')
+    #sentiment_analyzer.save_model()
+    sentiment_analyzer = Classifier(read=True, vector_method='tfidf')
+    sentiment = sentiment_analyzer.get_sentiment_polarity(text)[0]
+    ret = {'sentiment': sentiment}
+    if sentiment != 'Neutral':
+        entity = get_entity(text)
+        ret['entity'] = entity
+    return ret
+
 def classify(sentences):
 
     saved_SentiCR_model = 'classifier_models/SentiCR_model.sav'
@@ -478,6 +492,7 @@ if __name__ == '__main__':
 	parser.add_argument("--auth", help="GitHub's API authentication token.\n(Format: <username>:<api token>)")
 	parser.add_argument("--rebase", help="Rebase.\n(Format: <username>:<api token>)")
 	parser.add_argument('-u', '--update', action='store', dest='update', help='The repository to be updated.')
+	parser.add_argument('-c', '--classify', action='store', dest='classify', help='The comment to be classified.')
 	args = parser.parse_args()
 
 	start_time = time.time()
@@ -489,6 +504,8 @@ if __name__ == '__main__':
 			file.write(args.auth)
 	elif args.rebase:
 		print("TODO")
+	elif args.classify:
+		print(get_tuple(args.classify))
 	elif args.update:
 		try:
 			crawler = Crawler(args.update)

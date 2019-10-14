@@ -1,0 +1,27 @@
+python main.py --text "I should add that I'm sorry for the inconvenience. We generally strive to avoid breaking user code, but since this has already shipped, I find it unlikely that we'll change it back.
+
+python main.py --text "do it every time :) doesn't work :("
+
+python main.py --text "In general you will want to populate the properties of your view controllers in `viewDidLoad` rather than directly initializing them. It's unfortunately a bit more verbose (and in Swift requires using implicitly-unwrapped optionals), but doing work on view controller construction tends to run into a lot of issues like this where it's constructed surprisingly early in the life cycle."
+
+python main.py --text "Guys sorry for taking your time, the problem was that I've updated `Realm` only for the subproject, but not for the main project too, I totally forgot about that."
+
+python main.py --text "Sorry about that guys. I destroyed the page ""Configuration variables"" after wrong manipulation ""3 open tabs on github. Does anyone have it on his side please ? Many thanks .. and shame on me."
+
+
+
+
+
+
+
+** CONTRADIÇÔES ** (No conjunto de treino, os comentarios abaixo foram rotulados como ´Negativo´ porém foram classificados como Neutros)
+
+python main.py --text "@jpsim Any plans on supporting it? I am forced to do so, as other things are not working properly with stable cocoapods version. With beta I don't have any problems except for RealmSwift import. :("
+
+python main.py --text "So your Dictionary.realm is something you update with an app update, and the UserDictionary.realm is updated by your users and stays on the phone even after an app update. Ok, I can see your point. We unfortunately don't support any cross Realm operations at all. So you would have to look up in both databases. Alternatively use one Realm and have a flag for user supplied words that you then can copy over to a new realm when you update the app."
+
+python main.py --text "I don't see the use-case personally, if you're doing some API calls to look up roles, then you can easily do that up-front, for one or many machines, if you want to lazy evaluate it, that sounds a bit contrived (i.e wait until you're in the middle of something important, before risking reliance on a 3rd party server.)"
+
+python main.py --text "@clintonb If you're here to troll me because you have a problem with my management style, don't bother."
+
+python main.py --text "Ugh, I just realized that example from the blog post is broken in several ways, actually. And it's not entirely clear how to make it work. (It's _not_ succesfully doing a git log between the 'last' deploy and now). Well, anyone have any ideas for a way to make this work right?   I'm getting really tired of waiting the extra 90+ seconds for an assets precompile even when no assets have changed."
