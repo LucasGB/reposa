@@ -54,6 +54,25 @@ def init():
 												'closed_pull_requests' : []
 											})
 
+def get_tuples(texts):
+    #sentiment_analyzer = Classifier(read=False, vector_method='tfidf')
+    #sentiment_analyzer.save_model()
+    sentiment_analyzer = Classifier(read=True, vector_method='tfidf')
+    sentiments = sentiment_analyzer.get_sentiment_polarity_collection(texts)
+
+    tuples = []
+    i = 0
+    for sentiment in sentiments:
+    	t = {'sentiment': sentiment[0]}
+    	if sentiment != 'Neutral':
+    		entity = get_entity(texts[i])
+    		t['entity'] = entity
+    	else:
+    		t['entity'] = None
+    	tuples.append(t)
+    	i = i + 1
+    return tuples
+
 def get_tuple(text):
     #sentiment_analyzer = Classifier(read=False, vector_method='tfidf')
     #sentiment_analyzer.save_model()
@@ -61,8 +80,11 @@ def get_tuple(text):
     sentiment = sentiment_analyzer.get_sentiment_polarity(text)[0]
     ret = {'sentiment': sentiment}
     if sentiment != 'Neutral':
-        entity = get_entity(text)
-        ret['entity'] = entity
+    	entity = get_entity(text)
+    	ret['entity'] = entity
+    else:
+    	ret['entity'] = None
+
     return ret
 
 def classify(sentences):
@@ -493,6 +515,7 @@ if __name__ == '__main__':
 	parser.add_argument("--rebase", help="Rebase.\n(Format: <username>:<api token>)")
 	parser.add_argument('-u', '--update', action='store', dest='update', help='The repository to be updated.')
 	parser.add_argument('-c', '--classify', action='store', dest='classify', help='The comment to be classified.')
+	parser.add_argument('--repo', action='store', dest='repo', help='The repository name to be classified.')
 	args = parser.parse_args()
 
 	start_time = time.time()
@@ -505,7 +528,62 @@ if __name__ == '__main__':
 	elif args.rebase:
 		print("TODO")
 	elif args.classify:
-		print(get_tuple(args.classify))
+		if(args.repo):
+			# Select rows by absence of positive_reviews_count field. Indicating if the row has been classified or not
+			repository_query = {"repository_id": args.repo, "positive_reviews_count" : {"$exists" : False} }
+			
+			prs = list(pull_requests_collection.find(repository_query).limit(int(args.classify)))
+			print("LEN: ", int(len(prs)))
+			
+			review_comments_ids = []
+			review_comments = []
+			issue_comments_ids = []
+			issue_comments = []
+			
+			for pr in prs:
+				print('Classifying comments from Pull Request #{}'.format(pr['number']))
+				for review_comment in pr['review_comments']:
+					review_comments_ids.append(review_comment['_id'])
+					review_comments.append(review_comment['body'])
+
+				for issue_comment in pr['issue_comments']:
+					issue_comments_ids.append(issue_comment['_id'])
+					issue_comments.append(issue_comment['body'])
+
+				i = 0
+				review_positive = 0
+				review_neutral = 0
+				review_negative = 0
+				review_sentiments = get_tuples(review_comments)
+				for sentiment in review_sentiments:
+					if(sentiment['sentiment'] == 'Positive'):
+						review_positive += 1
+					elif(sentiment['sentiment'] == 'Neutral'):
+						review_neutral += 1
+					elif(sentiment['sentiment'] == 'Negative'):
+						review_negative += 1
+					pull_requests_collection.update_one({"repository_id" : args.repo, 'number' : pr['number'], 'review_comments._id' : review_comments_ids[i] }, { "$set" : {"review_comments.$.sentiment" : sentiment['sentiment'], "review_comments.$.entity" : sentiment['entity']} })
+					i += 1
+
+				i = 0
+				issue_positive = 0
+				issue_neutral = 0
+				issue_negative = 0
+				issue_sentiments = get_tuples(issue_comments)
+				for sentiment in issue_sentiments:
+					if(sentiment['sentiment'] == 'Positive'):
+						issue_positive += 1
+					elif(sentiment['sentiment'] == 'Neutral'):
+						issue_neutral += 1
+					elif(sentiment['sentiment'] == 'Negative'):
+						issue_negative += 1
+					pull_requests_collection.update_one({"repository_id" : args.repo, 'number' : pr['number'], 'issue_comments._id' : issue_comments_ids[i] }, { "$set" : {"issue_comments.$.sentiment" : sentiment['sentiment'], "issue_comments.$.entity" : sentiment['entity']} })
+					i += 1
+				pull_requests_collection.update_one({"repository_id" : args.repo, 'number' : pr['number']}, { '$set' : {'positive_reviews_count' : review_positive, 'neutral_reviews_count' : review_neutral, 'negative_reviews_count' : review_negative, 'positive_comments_count' : issue_positive, 'neutral_comments_count' : issue_neutral, 'negative_comments_count' : issue_negative, 'total_positive_count' : review_positive + issue_positive, 'total_neutral_count' : review_neutral + issue_neutral, 'total_negative_count' : review_negative + issue_negative} })
+		else:
+			print("Repository name required.")
+
+
 	elif args.update:
 		try:
 			crawler = Crawler(args.update)
