@@ -532,23 +532,34 @@ if __name__ == '__main__':
 			# Select rows by absence of positive_reviews_count field. Indicating if the row has been classified or not
 			repository_query = {"repository_id": args.repo, "positive_reviews_count" : {"$exists" : False} }
 			
-			prs = list(pull_requests_collection.find(repository_query).limit(int(args.classify)))
-			print("LEN: ", int(len(prs)))
+			#repository_query = {"repository_id": args.repo}
 			
-			review_comments_ids = []
-			review_comments = []
-			issue_comments_ids = []
-			issue_comments = []
+			#repository_query = {"repository_id": "tensorflow/tensorflow", "number" : 792 }
+			
+			prs = list(pull_requests_collection.find(repository_query).limit(int(args.classify)))
 			
 			for pr in prs:
+				review_comments_ids = []
+				review_comments = []
+				issue_comments_ids = []
+				issue_comments = []
+
 				print('Classifying comments from Pull Request #{}'.format(pr['number']))
+				k = 1
 				for review_comment in pr['review_comments']:
 					review_comments_ids.append(review_comment['_id'])
 					review_comments.append(review_comment['body'])
+					print("{} - {}".format(k, review_comment['body']))
+					k += 1
 
+
+				l = 1
 				for issue_comment in pr['issue_comments']:
 					issue_comments_ids.append(issue_comment['_id'])
 					issue_comments.append(issue_comment['body'])
+					print("{} - {}".format(l, issue_comment['body']))
+					l += 1
+				
 
 				i = 0
 				review_positive = 0
@@ -580,6 +591,12 @@ if __name__ == '__main__':
 					pull_requests_collection.update_one({"repository_id" : args.repo, 'number' : pr['number'], 'issue_comments._id' : issue_comments_ids[i] }, { "$set" : {"issue_comments.$.sentiment" : sentiment['sentiment'], "issue_comments.$.entity" : sentiment['entity']} })
 					i += 1
 				pull_requests_collection.update_one({"repository_id" : args.repo, 'number' : pr['number']}, { '$set' : {'positive_reviews_count' : review_positive, 'neutral_reviews_count' : review_neutral, 'negative_reviews_count' : review_negative, 'positive_comments_count' : issue_positive, 'neutral_comments_count' : issue_neutral, 'negative_comments_count' : issue_negative, 'total_positive_count' : review_positive + issue_positive, 'total_neutral_count' : review_neutral + issue_neutral, 'total_negative_count' : review_negative + issue_negative} })
+
+				if(int(pr["comments_count"]) < (issue_positive + issue_negative + issue_neutral)):
+					print("Algo de errado nao esta certo.")
+					break
+
+				print("Review comments length: {}; Pos: {}; Neu: {}; Neg: {}\nIssue comments length: {}; Pos: {}; Neu: {}; Neg: {}\n".format(len(review_comments), review_positive, review_neutral, review_negative, len(issue_comments), issue_positive, issue_neutral, issue_negative))
 		else:
 			print("Repository name required.")
 

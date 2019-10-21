@@ -1,0 +1,9 @@
+* Visualizations
+
+- Line Chart
+- Scatter Plot
+- Radar Chart
+
+- Stacked Area Graph: para visualizar as polaridades de comentarios contidos em pull requests
+
+- Tree maps: para visualizar projetos mais felizes entre as linguagens de programação

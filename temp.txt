@@ -1,0 +1,9 @@
+On average, 70% of the pull requests came from a contributor who would never contribute again to the repository (once-contributors). We related this to receiving a
+negative comment on the first contribution (pull request)
+and also to the project characteristics, KLoc, number of
+contributors, and stargazers. We found that as the project
+grew in KLoc(Thousand lines of code) the number on oncecontributors with negative comments on the first pull request grew, from 10.97% on projects with less than 30.57
+KLoc to 24.02% on projects bigger than 197.78 KLoc, we
+present the progression in Figure 6 in the bars, and the line
+shows the percent of projects in the respective KLoc range,
+we did not find a relationship between number of contributors or stargazers with the percentage of once-contributors.
