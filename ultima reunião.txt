@@ -1,0 +1,40 @@
+confiança - 95%
+margem de erro = 5%
+devio padrao = vazio
+
+dataset inicial: calculadora amostral nos (xa) PRs aceitos, (xb) PRs rejeitados.
+
+
+Selecionar projetos
+	!!!DESCARTAR awesome projects!!!
+	> pegar 50 projetos de cada linguagem ordenados por estrela.
+	> pra cada um dos 50 remover os casos de documentação, e se enquadrar pela quantidade de PRs aceitos e rejeitados. depois olhar 
+	> remover quem nao tem 1.000 aceitos e rejeitados
+	> pegar aleatoriamente 10 dos projetos restantes.
+	> realizar calculo amostral para os prs que sobraram.
+
+	pq: minimamente 
+
+	para 
+
+
+olhar para o conjunto de treinamento.
+
+pegamos uma api cujo conjunto de treinamento é do mesmo dominio que estamos rodando.
+
+
+a motivação da QP3 é a motivação pro Objetivo. e nenhuma QP ira receber a motivação.
+
+
+não é correlação, é teste de hipotese
+
+** Ignora neutro, e compara entre positivo e negativo. Se der empate, é neutro, portanto, descarta.
+
+orientação de TCC
+explicar o cenario. explicar o estudo, dizer q o wiese esta junto comigo. Explicar o que eu tenho. estudo exploratório se n der nessa, dara no outro.
+
+
+toda vez que eu mandar um email pra mostrar o que tenho feito, copiar o ivanilton no email.
+
+
+https://api.github.com/search/repositories?q=language:javascript+stars:%3E=2000
