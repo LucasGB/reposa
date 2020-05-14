@@ -1,1 +1,1 @@
-dir_path = 'C:/Users/PiriGuedes/Documents/TCC/reposa/SentiSW'
+dir_path = 'C:/Users/lucas/TCC/reposa/SentiSW'

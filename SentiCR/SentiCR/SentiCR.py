@@ -35,7 +35,7 @@ from imblearn.over_sampling import SMOTE
 
 
 def replace_all(text, dic):
-    for i, j in dic.iteritems():
+    for i, j in dic.items():
         text = text.replace(i, j)
     return text
 
@@ -73,6 +73,20 @@ mystop_words=[
  'throw','throws','lambda','endfor','endforeach','endif','endwhile','clone'
 ]
 
+'''
+Guedes: The code line bellow fixes the following warning:
+
+UserWarning: Your stop_words may be inconsistent with your preprocessing. Tokenizing the stop words generated tokens ['ani', 'continu', 'deleg', 'doe', 'doubl', 'dure', 'els', 'endwhil', 'extend', 'implement', 'includ', 'interfac', 'namespac', 'nativ', 'nowwhil', 'onc', 'ourselv', 'overrid', 'packag', 'privat', 'protect', 'rais', 'readon', 'requir', 'sign', 'synchron', 'themselv', 'tri', 'veri', 'yourselv'] not in stop_words.
+
+After applying this change, once again, it produces the 'same' warning:
+UserWarning: Your stop_words may be inconsistent with your preprocessing. Tokenizing the stop words generated tokens ['el', 'rai'] not in stop_words.
+
+But I think this shoud be left unchanged because the TfidfVectorizer applies 'tokenize_and_stem' method once on every comment text, producing the same tokenized words in 'mystop_words' array. In other words, TfidfVectorizer will tokenize 'else' and 'raise' as 'els' and 'rais' respectively, and those words are present in the 'mystop_words' array. Lastly, I decided to surpress this type of warning message since it has been fixed.
+'''
+mystop_words = [tokenize_and_stem(word)[0] for word in mystop_words]
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 #logging.basicConfig(level=logging.INFO,
 #                    format='%(asctime)s %(levelname)s %(message)s')
 
@@ -100,13 +114,12 @@ NegP: {<VERB>?<ADV>+<VERB|ADJ>?<PRT|ADV><VERB>}
 """
 chunk_parser = nltk.RegexpParser(grammar)
 
-
 contractions_regex = re.compile('(%s)' % '|'.join(contractions_dict.keys()))
 
 def expand_contractions(s, contractions_dict=contractions_dict):
      def replace(match):
          return contractions_dict[match.group(0)]
-     return contractions_regex.sub(replace, s.lower())
+     return contractions_regex.sub(replace, s.decode().lower())
 
 
 url_regex = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
@@ -192,6 +205,7 @@ class SentiCR:
     def __init__(self, algo="GBT", training_data=None):
         self.algo = algo
         if(training_data is None):
+            print('Reading from oracle')
             self.training_data=self.read_data_from_oracle()
         else:
             self.training_data = training_data
@@ -232,6 +246,8 @@ class SentiCR:
             training_comments.append(comments)
             training_ratings.append(sentidata.rating)
 
+        print("UTILIZING NEW STOPWORDS")
+        print(mystop_words)
         # discard stopwords, apply stemming, and discard words present in less than 3 comments
         self.vectorizer = TfidfVectorizer(tokenizer=tokenize_and_stem, sublinear_tf=True, max_df=0.5,
                                      stop_words=mystop_words, min_df=3)
@@ -239,7 +255,7 @@ class SentiCR:
         Y_train = np.array(training_ratings)
 
         #Apply SMOTE to improve ratio of the minority class
-        smote_model = SMOTE(ratio=0.5, random_state=None, k=None, k_neighbors=15, m=None, m_neighbors=15, out_step=.0001,
+        smote_model = SMOTE(sampling_strategy=0.5, random_state=None, k_neighbors=15, m_neighbors=15, out_step=.0001,
                    kind='regular', svm_estimator=None, n_jobs=1)
 
         X_resampled, Y_resampled=smote_model.fit_sample(X_train, Y_train)
@@ -250,7 +266,12 @@ class SentiCR:
         return model
 
     def read_data_from_oracle(self):
-        workbook = open_workbook(os.path.join(os.path.dirname(__file__), "oracle.xlsx"))
+        # TRAIN ORIGINAL SENTICR
+        #workbook = open_workbook(os.path.join(os.path.dirname(__file__), "oracle.xlsx"))
+        
+        # TRAIN SENTICR+
+        workbook = open_workbook(os.path.join(os.path.dirname(__file__), "sentiCR_plus.xlsx"))
+        
         sheet = workbook.sheet_by_index(0)
         oracle_data=[]
         print("Reading data from oracle..")
@@ -264,6 +285,12 @@ class SentiCR:
         comment=preprocess_text(text)
         feature_vector=self.vectorizer.transform([comment]).toarray()
         sentiment_class=self.model.predict(feature_vector)
+        return sentiment_class
+    
+    def get_sentiment_polarity_probas(self,text):
+        comment=preprocess_text(text)
+        feature_vector=self.vectorizer.transform([comment]).toarray()
+        sentiment_class=self.model.predict_proba(feature_vector)
         return sentiment_class
 
     def get_sentiment_polarity_collection(self,texts):
@@ -329,7 +356,13 @@ if __name__ == '__main__':
     print("Algrithm: " + ALGO)
     print("Repeat: " + str(REPEAT))
 
-    workbook = open_workbook("oracle.xlsx")
+    # ORIGINAL SENTICR
+    #workbook = open_workbook("oracle.xlsx")
+    
+    # SENTICR+
+    workbook = open_workbook("sentiCR_plus.xlsx")
+    
+    sentiCR_plus.xlsx
     sheet = workbook.sheet_by_index(0)
     oracle_data = []
 

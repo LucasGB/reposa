@@ -26,14 +26,25 @@ class Classifier:
             self.vec_model = vec_model
             if 'vectorizer' in model_vectorizer:
                 self.vectorizer = model_vectorizer['vectorizer']
+            print("Saving model.")
+            self.save_model()
 
-    def get_sentiment_polarity(self, text):
+    def get_sentiment_polarity_label(self, text):
         text = preprocess(text)
         if self.vector_method == 'tfidf':
             feature_vector = self.vectorizer.transform([text]).toarray()
         elif self.vector_method == 'doc2vec':
             feature_vector = self.vec_model.get_doc_to_vec(text)
         sentiment_class=self.model.predict(feature_vector)
+        return sentiment_class
+    
+    def get_sentiment_polarity_proba(self, text):
+        text = preprocess(text)
+        if self.vector_method == 'tfidf':
+            feature_vector = self.vectorizer.transform([text]).toarray()
+        elif self.vector_method == 'doc2vec':
+            feature_vector = self.vec_model.get_doc_to_vec(text)
+        sentiment_class=self.model.predict_proba(feature_vector)
         return sentiment_class
 
     def get_sentiment_polarity_collection(self, texts):
@@ -54,7 +65,10 @@ class Classifier:
     # save model into disk
     def save_model(self):
         with open(model_path, 'wb') as fid:
+            print("pickling model")
             pickle.dump(self.model, fid)
+            print("pickled")
         with open(vector_path, 'wb') as fid:
+            print("pickling vec")
             pickle.dump(self.vectorizer, fid)
-
+            print("pickled")
