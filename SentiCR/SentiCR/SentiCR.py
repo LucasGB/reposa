@@ -268,9 +268,12 @@ class SentiCR:
     def read_data_from_oracle(self):
         # TRAIN ORIGINAL SENTICR
         #workbook = open_workbook(os.path.join(os.path.dirname(__file__), "oracle.xlsx"))
+        #print("USING ORACLE.XLSX")
         
         # TRAIN SENTICR+
-        workbook = open_workbook(os.path.join(os.path.dirname(__file__), "sentiCR_plus.xlsx"))
+        f = "SentiCR+ (SentiCR + converted SentiSW).xlsx"
+        workbook = open_workbook(os.path.join(os.path.dirname(__file__), f))
+        print("USING", f)
         
         sheet = workbook.sheet_by_index(0)
         oracle_data=[]
@@ -358,9 +361,11 @@ if __name__ == '__main__':
 
     # ORIGINAL SENTICR
     #workbook = open_workbook("oracle.xlsx")
+    #print("USING ORACLE.XLSX")
     
     # SENTICR+
     workbook = open_workbook("sentiCR_plus.xlsx")
+    print("USING SENTICR+.XLSX")
     
     sentiCR_plus.xlsx
     sheet = workbook.sheet_by_index(0)

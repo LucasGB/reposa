@@ -5,8 +5,11 @@ from SentiSW.code.classification.doc_to_vec import DocToVec, default_model_path
 from SentiSW.code.classification.preprocess.preprocess import preprocess
 from SentiSW.settings import dir_path
 
-model_path = dir_path + '/data/model/sentimentClassification/classifier.pkl'
-vector_path = dir_path + '/data/model/sentimentClassification/vector.pkl'
+#model_path = dir_path + '/data/model/sentimentClassification/classifier.pkl'
+#vector_path = dir_path + '/data/model/sentimentClassification/vector.pkl'
+
+model_path = dir_path + '/data/model/sentimentClassification/classifier_sentiSW+_(preds)_no_chinese_chars.pkl'
+vector_path = dir_path + '/data/model/sentimentClassification/vector_sentiSW+_(preds)_no_chinese_chars.pkl'
 
 class Classifier:
     def __init__(self, algo='GBT', training_data=None, vector_method='doc2vec', read=False):
